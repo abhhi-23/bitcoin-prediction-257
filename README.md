@@ -2,9 +2,9 @@
 
 ## Team Members
 
-Harbans Singh Toor (017405076) - harbanssingh.toor@sjsu.edu
-Abhi Kadam (017432194) - abhi.kadam@sjsu.edu
-Mohana Moganti (017163497) - mohanasatyanarayana.moganti@sjsu.edu
+1. Harbans Singh Toor (017405076) - harbanssingh.toor@sjsu.edu
+2. Abhi Kadam (017432194) - abhi.kadam@sjsu.edu
+3. Mohana Moganti (017163497) - mohanasatyanarayana.moganti@sjsu.edu
 
 ## Project Overview
 
