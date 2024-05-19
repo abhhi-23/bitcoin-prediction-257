@@ -112,16 +112,16 @@ def predict():
 
     try:
         future_dates, predictions = predict_prices(model, data, date)
-        st.write(f"Length of future_dates: {len(future_dates)}")
-        st.write(f"Length of predictions: {len(predictions)}")
+        # st.write(f"Length of future_dates: {len(future_dates)}")
+        # st.write(f"Length of predictions: {len(predictions)}")
 
-        predictions_df = pd.DataFrame({
-            'Date': future_dates,
-            'Predicted Close Price': predictions
-        })
+        # predictions_df = pd.DataFrame({
+        #     'Date': future_dates,
+        #     'Predicted Close Price': predictions
+        # })
 
-        st.subheader('Predicted Bitcoin Prices for the Next 7 Days')
-        st.write(predictions_df)
+        # st.subheader('Predicted Bitcoin Prices for the Next 7 Days')
+        # st.write(predictions_df)
 
         # Calculate highest, lowest, and average predicted prices
         highest_price = max(predictions)
