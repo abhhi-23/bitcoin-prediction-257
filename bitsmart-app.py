@@ -16,15 +16,16 @@ def load_model(model_path):
 st.title('BitSmart - Bitcoin Price Prediction and Trading Strategy')
 
 # st.sidebar.header('User Input Features')
-
-data_load_state = st.text('Loading data...')
-data = load_data('BTC-USD.csv')
-data_load_state.text('Loading data...done!')
-
-model_load_state = st.text('Loading model...')
-model = load_model('Bitcoin_LSTM_Model.keras')
-model_load_state.text('Loading model...done!')
 date = st.date_input("Select a Date", datetime.date(2024, 4, 20))
+
+# data_load_state = st.text('Loading data...')
+data = load_data('BTC-USD.csv')
+# data_load_state.text('Loading data...done!')
+
+# model_load_state = st.text('Loading model...')
+model = load_model('Bitcoin_LSTM_Model.keras')
+# model_load_state.text('Loading model...done!')
+
 
 # st.subheader('Historical Bitcoin Prices')
 # st.write(data.tail())
@@ -129,18 +130,26 @@ def predict():
             'Date': future_dates,
             'Predicted Close Price': predictions
         })
-
+        
         st.subheader('Predicted Bitcoin Prices for the Next 7 Days')
         st.write(predictions_df)
         strategy, sell_date, buy_date = generate_strategy(data, future_dates, predictions)
+                
+        highest_price = max(predictions)
+        lowest_price = min(predictions)
+        average_price = np.mean(predictions)
 
+        st.subheader('Summary of Predicted Prices')
+        st.write(f"Highest Predicted Price: ${highest_price:.2f}")
+        st.write(f"Lowest Predicted Price: ${lowest_price:.2f}")
+        st.write(f"Average Predicted Closing Price: ${average_price:.2f}")
         st.subheader('Swing Trading Strategy')
         if strategy == "Hold":
             st.write("Hold the portfolio and do not trade.")
         elif strategy == "Sell only":
-            st.write(f"Sell all on {sell_date.date()} and hold cash.")
+            st.write(f"Sell all on **{sell_date.date()}** and hold cash.")
         elif strategy == "Sell and Buy":
-            st.write(f"Sell all on {sell_date.date()} and buy back on {buy_date.date()}.")
+            st.write(f"Sell all on **{sell_date.date()}** and buy back on {buy_date.date()}.")
     except Exception as e:
         st.error(f"Error: {e}")
 
