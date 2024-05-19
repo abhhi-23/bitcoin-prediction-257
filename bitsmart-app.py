@@ -10,7 +10,7 @@ from datetime import timedelta
 st.title('BitSmart Bitcoin Prediction')
 
 # Instructions and date input
-st.write("Enter date for bitcoin prediction.... ")
+st.write("Assume today's date is .... ")
 selected_date = st.date_input("")
 
 if st.button('Predict'):
