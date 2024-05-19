@@ -30,6 +30,36 @@ model = load_model('Bitcoin_LSTM_Model.keras')
 # st.subheader('Historical Bitcoin Prices')
 # st.write(data.tail())
 def predict():   
+    # Instructions and date input
+    start_date = datetime(2018,2,1)
+    end_date = datetime(2024,5,11)
+    st.write("Assume today's date is .... ")
+    selected_date = st.date_input("Select a date", min_value=start_date, max_value=end_date)
+
+    if st.button('Predict'):
+        start_date = selected_date.strftime('%Y-%m-%d')
+        # Load the trained model
+        model = load_model('Bitcoin_LSTM_Model.keras')
+
+        data = pd.read_csv('BTC-USD.csv')
+        data = data.dropna()
+        data['Date'] = pd.to_datetime(data['Date'], format='%Y-%m-%d')
+        data = data.drop(data[['Open','Adj Close','Volume']],axis=1)
+        data_copy = data.copy()
+        input_date = datetime.strptime(selected_date.strftime("%Y-%m-%d"), "%Y-%m-%d")
+        data_copy = data_copy[['Date','High', 'Low', 'Close']].loc[data_copy['Date'] > '2018-01-01']
+        data = data[['High', 'Low', 'Close']].loc[data['Date'] > '2018-01-01']
+        data_copy = data_copy.reset_index(drop=True)
+        index = data_copy[data_copy['Date'] == input_date].index.tolist()
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        data = scaler.fit_transform(data)  
+        
+        # Predict the next 7 days' high, low, and close prices
+        pred_days = 7
+        time_steps = 15
+        last_sequence = data[index[0]-8:index[0]+7]
+        temp_input = list(last_sequence)
+        temp_input = [item for sublist in temp_input for item in sublist] 
 
 
     
