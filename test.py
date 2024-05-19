@@ -46,16 +46,17 @@ def predict():
         data['Date_ordinal'] = data['Date'].map(datetime.datetime.toordinal)
         if pd.to_datetime(date) not in data['Date'].values:
             st.warning("Selected date is not in the dataset.")
-            return None, None, None
+            return None, None, None, None
         date_index = data[data['Date'] == pd.to_datetime(date)].index[0]
         sequence_length = 15
         if date_index < sequence_length:
             st.warning("Not enough data to create a sequence for the model.")
-            return None, None, None
+            return None, None, None, None
         sequence_data = data.iloc[date_index-sequence_length:date_index]
         future_dates = pd.date_range(date + datetime.timedelta(days=1), periods=7).tolist()
 
-        features = ['Date_ordinal', 'Open', 'High', 'Low', 'Close']  
+        # Assuming the model expects 3 features (Open, High, Low)
+        features = ['Close', 'High', 'Low']  
         sequence_data_normalized = (sequence_data[features] - sequence_data[features].mean()) / sequence_data[features].std()
         sequence_input = sequence_data_normalized.values.reshape(1, sequence_length, len(features))
         
@@ -65,24 +66,25 @@ def predict():
 
         for i in range(7):
             pred = model.predict(sequence_input)
-            predicted_close = pred[0, -1] * sequence_data[features].std()['Close'] + sequence_data[features].mean()['Close']  
+            predicted_close = pred[0, 2] * sequence_data[features].std()['Close'] + sequence_data[features].mean()['Close']  
+            predicted_high = pred[0, 0] * sequence_data[features].std()['High'] + sequence_data[features].mean()['High']  
+            predicted_low = pred[0, 1] * sequence_data[features].std()['Low'] + sequence_data[features].mean()['Low']  
+            
             close_predictions.append(predicted_close)
-            predicted_high = pred[0, -1] * sequence_data[features].std()['High'] + sequence_data[features].mean()['High']  
             high_predictions.append(predicted_high)
-            predicted_low = pred[0, -1] * sequence_data[features].std()['Low'] + sequence_data[features].mean()['Low']  
             low_predictions.append(predicted_low)
 
-            new_row = np.array([[future_dates[i].toordinal(), predicted_close, predicted_close]])
+            new_row = np.array([[predicted_close, predicted_high, predicted_low]])
             new_row_normalized = (new_row - sequence_data[features].mean().values) / sequence_data[features].std().values
             sequence_input = np.append(sequence_input[:, 1:, :], new_row_normalized.reshape(1, 1, -1), axis=1)
 
         return future_dates, close_predictions, high_predictions, low_predictions
 
-    def generate_strategy(data, future_dates, predictions, rsi_window=14, ma_window=20, threshold=0.05):
-        max_price = max(predictions)
-        min_price = min(predictions)
+    def generate_strategy(data, future_dates, close_predictions, high_predictions, low_predictions, rsi_window=14, ma_window=20, threshold=0.05):
+        max_price = max(close_predictions)
+        min_price = min(close_predictions)
         
-        pred_df = pd.DataFrame({'Date': future_dates, 'Predicted_Close': predictions})
+        pred_df = pd.DataFrame({'Date': future_dates, 'Predicted_Close': close_predictions})
         data = pd.concat([data.set_index('Date'), pred_df.set_index('Date')], axis=1)
 
         data = calculate_indicators(data, ma_window)
@@ -91,12 +93,12 @@ def predict():
         sell_date = None
         buy_date = None
 
-        for i, price in enumerate(predictions):
+        for i, price in enumerate(close_predictions):
             if price == max_price:
                 sell_date = i
                 break  # Break to ensure we only set sell_date once
 
-        for i, price in enumerate(predictions):
+        for i, price in enumerate(close_predictions):
             if price == min_price and sell_date is not None and i > sell_date:
                 buy_date = i
                 break  # Break to ensure we only set buy_date once
@@ -108,10 +110,10 @@ def predict():
         if buy_date is not None and data.loc[future_dates[buy_date], 'RSI'] < 30:
             return "Sell and Buy", future_dates[sell_date], future_dates[buy_date]  # RSI indicates oversold, buy
 
-        if sell_date is not None and predictions[sell_date] > data.loc[future_dates[sell_date], 'BB_upper']:
+        if sell_date is not None and close_predictions[sell_date] > data.loc[future_dates[sell_date], 'BB_upper']:
             return "Sell only", future_dates[sell_date], None  # Price is above upper Bollinger Band, sell
 
-        if buy_date is not None and predictions[buy_date] < data.loc[future_dates[buy_date], 'BB_lower']:
+        if buy_date is not None and close_predictions[buy_date] < data.loc[future_dates[buy_date], 'BB_lower']:
             return "Sell and Buy", future_dates[sell_date], future_dates[buy_date]  # Price is below lower Bollinger Band, buy
 
         price_change = (max_price - min_price) / min_price
@@ -132,8 +134,6 @@ def predict():
         # st.write(f"Length of future_dates: {len(future_dates)}")
         # st.write(f"Length of predictions: {len(close_predictions)}")
 
-        
-
         # Calculate highest, lowest, and average predicted prices
         highest_price = max(high_predictions)
         lowest_price = min(low_predictions)
@@ -144,7 +144,7 @@ def predict():
         st.write(f"Lowest Predicted Price: <span style='font-size:24px'>${lowest_price:.2f}</span>", unsafe_allow_html=True)
         st.write(f"Average Predicted Closing Price: <span style='font-size:24px'>${average_price:.2f}</span>", unsafe_allow_html=True)
 
-        strategy, sell_date, buy_date = generate_strategy(data, future_dates, close_predictions)
+        strategy, sell_date, buy_date = generate_strategy(data, future_dates, close_predictions, high_predictions, low_predictions)
 
         st.subheader('Swing Trading Strategy')
         strategy_data = {
@@ -153,7 +153,7 @@ def predict():
         }
         strategy_df = pd.DataFrame(strategy_data)
         st.table(strategy_df)
-
+        
         predictions_df = pd.DataFrame({
             'Date': future_dates,
             'Predicted Close Price': close_predictions,
@@ -166,9 +166,9 @@ def predict():
 
     except Exception as e:
         st.error(f"Error: {e}")
+
 if st.button('Predict'):
     predict()
-# st.write('Predictions and strategy generated!')
 
 if __name__ == '__main__':
     st.write('.')
