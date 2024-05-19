@@ -144,7 +144,7 @@ data_load_state.text('Loading data...done!')
 
 # Load model
 model_load_state = st.text('Loading model...')
-model = load_model('Bitcoin_LSTM_Model.keras')
+model = load_model('Bitcoin_LSTM_Best_Model.keras')
 model_load_state.text('Loading model...done!')
 
 st.subheader('Historical Bitcoin Prices')
