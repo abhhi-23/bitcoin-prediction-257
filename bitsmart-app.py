@@ -144,13 +144,13 @@ def predict():
         }
         strategy_df = pd.DataFrame(strategy_data)
         st.table(strategy_df)
-        predictions_df = pd.DataFrame({
-            'Date': future_dates,
-            'Predicted Close Price': predictions
-        })
+        # predictions_df = pd.DataFrame({
+        #     'Date': future_dates,
+        #     'Predicted Close Price': predictions
+        # })
 
-        st.subheader('Predicted Bitcoin Prices for the Next 7 Days')
-        st.write(predictions_df)
+        # st.subheader('Predicted Bitcoin Prices for the Next 7 Days')
+        # st.write(predictions_df)
 
 
     except Exception as e:
