@@ -1,68 +1,29 @@
-
 import streamlit as st
 import pandas as pd
 import datetime
 import numpy as np
 import tensorflow as tf
+
 @st.cache_data
 def load_data(file_path):
     data = pd.read_csv(file_path)
     data['Date'] = pd.to_datetime(data['Date'])
     return data
+
 @st.cache_resource
 def load_model(model_path):
     model = tf.keras.models.load_model(model_path)
     return model
+
 st.title('BitSmart - Bitcoin Price Prediction and Trading Strategy')
 
-# st.sidebar.header('User Input Features')
 date = st.date_input("Select a Date", datetime.date(2024, 4, 20))
 
-# data_load_state = st.text('Loading data...')
 data = load_data('BTC-USD.csv')
-# data_load_state.text('Loading data...done!')
-
-# model_load_state = st.text('Loading model...')
 model = load_model('Bitcoin_LSTM_Model.keras')
-# model_load_state.text('Loading model...done!')
 
-
-# st.subheader('Historical Bitcoin Prices')
-# st.write(data.tail())
 def predict():   
-    # Instructions and date input
-    start_date = datetime(2018,2,1)
-    end_date = datetime(2024,5,11)
-    st.write("Assume today's date is .... ")
-    selected_date = st.date_input("Select a date", min_value=start_date, max_value=end_date)
 
-    if st.button('Predict'):
-        start_date = selected_date.strftime('%Y-%m-%d')
-        # Load the trained model
-        model = load_model('Bitcoin_LSTM_Model.keras')
-
-        data = pd.read_csv('BTC-USD.csv')
-        data = data.dropna()
-        data['Date'] = pd.to_datetime(data['Date'], format='%Y-%m-%d')
-        data = data.drop(data[['Open','Adj Close','Volume']],axis=1)
-        data_copy = data.copy()
-        input_date = datetime.strptime(selected_date.strftime("%Y-%m-%d"), "%Y-%m-%d")
-        data_copy = data_copy[['Date','High', 'Low', 'Close']].loc[data_copy['Date'] > '2018-01-01']
-        data = data[['High', 'Low', 'Close']].loc[data['Date'] > '2018-01-01']
-        data_copy = data_copy.reset_index(drop=True)
-        index = data_copy[data_copy['Date'] == input_date].index.tolist()
-        scaler = MinMaxScaler(feature_range=(0, 1))
-        data = scaler.fit_transform(data)  
-        
-        # Predict the next 7 days' high, low, and close prices
-        pred_days = 7
-        time_steps = 15
-        last_sequence = data[index[0]-8:index[0]+7]
-        temp_input = list(last_sequence)
-        temp_input = [item for sublist in temp_input for item in sublist] 
-
-
-    
     def calculate_rsi(data, window=14):
         delta = data['Close'].diff()
         gain = (delta.where(delta > 0, 0)).fillna(0)
@@ -107,7 +68,7 @@ def predict():
 
         return future_dates, predictions
 
-    def generate_strategy(data, future_dates, predictions, rsi_window=14, ma_window=20, threshold=0.95):
+    def generate_strategy(data, future_dates, predictions, rsi_window=14, ma_window=20, threshold=0.05):
         max_price = max(predictions)
         min_price = min(predictions)
         
@@ -149,8 +110,6 @@ def predict():
 
         return "Hold", None, None
 
-
-
     try:
         future_dates, predictions = predict_prices(model, data, date)
         st.write(f"Length of future_dates: {len(future_dates)}")
@@ -160,11 +119,11 @@ def predict():
             'Date': future_dates,
             'Predicted Close Price': predictions
         })
-        
+
         st.subheader('Predicted Bitcoin Prices for the Next 7 Days')
         st.write(predictions_df)
-        strategy, sell_date, buy_date = generate_strategy(data, future_dates, predictions)
-                
+
+        # Calculate highest, lowest, and average predicted prices
         highest_price = max(predictions)
         lowest_price = min(predictions)
         average_price = np.mean(predictions)
@@ -173,13 +132,16 @@ def predict():
         st.write(f"Highest Predicted Price: ${highest_price:.2f}")
         st.write(f"Lowest Predicted Price: ${lowest_price:.2f}")
         st.write(f"Average Predicted Closing Price: ${average_price:.2f}")
+
+        strategy, sell_date, buy_date = generate_strategy(data, future_dates, predictions)
+
         st.subheader('Swing Trading Strategy')
         if strategy == "Hold":
             st.write("Hold the portfolio and do not trade.")
         elif strategy == "Sell only":
-            st.write(f"Sell all on **{sell_date.date()}** and hold cash.")
+            st.markdown(f"Sell all on **{sell_date.date()}** and hold cash.")
         elif strategy == "Sell and Buy":
-            st.write(f"Sell all on **{sell_date.date()}** and buy back on {buy_date.date()}.")
+            st.markdown(f"**Sell all on **{sell_date.date()}** and buy back on {buy_date.date()}.")
     except Exception as e:
         st.error(f"Error: {e}")
 
