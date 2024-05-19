@@ -45,11 +45,13 @@ def predict():
         data = data.dropna(subset=['Close'])  
         data['Date_ordinal'] = data['Date'].map(datetime.datetime.toordinal)
         if pd.to_datetime(date) not in data['Date'].values:
-            raise ValueError("Selected date is not in the dataset")
+            st.warning("Selected date is not in the dataset.")
+            return None, None
         date_index = data[data['Date'] == pd.to_datetime(date)].index[0]
         sequence_length = 15
         if date_index < sequence_length:
-            raise ValueError("Not enough data to create a sequence for the model")
+            st.warning("Not enough data to create a sequence for the model.")
+            return None, None
         sequence_data = data.iloc[date_index-sequence_length:date_index]
         future_dates = pd.date_range(date + datetime.timedelta(days=1), periods=7).tolist()
 
@@ -112,6 +114,9 @@ def predict():
 
     try:
         future_dates, predictions = predict_prices(model, data, date)
+        if future_dates is None or predictions is None:
+            return
+
         # st.write(f"Length of future_dates: {len(future_dates)}")
         # st.write(f"Length of predictions: {len(predictions)}")
 
@@ -129,24 +134,24 @@ def predict():
         average_price = np.mean(predictions)
 
         st.subheader('Summary of Predicted Prices')
-        st.write(f"Highest Predicted Price: ${highest_price:.2f}")
-        st.write(f"Lowest Predicted Price: ${lowest_price:.2f}")
-        st.write(f"Average Predicted Closing Price: ${average_price:.2f}")
+        st.write(f"Highest Predicted Price: <span style='font-size:24px'>${highest_price:.2f}</span>", unsafe_allow_html=True)
+        st.write(f"Lowest Predicted Price: <span style='font-size:24px'>${lowest_price:.2f}</span>", unsafe_allow_html=True)
+        st.write(f"Average Predicted Closing Price: <span style='font-size:24px'>${average_price:.2f}</span>", unsafe_allow_html=True)
 
         strategy, sell_date, buy_date = generate_strategy(data, future_dates, predictions)
 
         st.subheader('Swing Trading Strategy')
         if strategy == "Hold":
-            st.write("Hold the portfolio and do not trade.")
+            st.markdown("<p style='font-size:24px'>Hold the portfolio and do not trade.</p>", unsafe_allow_html=True)
         elif strategy == "Sell only":
-            st.markdown(f"Sell all on **{sell_date.date()}** and hold cash.")
+            st.markdown(f"Sell all on <span style='font-size:24px'>{sell_date.date()}</span> and hold cash.", unsafe_allow_html=True)
         elif strategy == "Sell and Buy":
-            st.markdown(f"**Sell all on **{sell_date.date()}** and buy back on {buy_date.date()}.")
+            st.markdown(f"Sell all on <span style='font-size:24px'>{sell_date.date()}</span> and buy back on <span style='font-size:24px'>{buy_date.date()}</span>.", unsafe_allow_html=True)
     except Exception as e:
         st.error(f"Error: {e}")
-
-predict()
-st.write('Predictions and strategy generated!')
+if st.button('Predict'):
+    predict()
+# st.write('Predictions and strategy generated!')
 
 if __name__ == '__main__':
     st.write('')
