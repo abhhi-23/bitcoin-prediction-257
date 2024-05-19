@@ -117,17 +117,6 @@ def predict():
         if future_dates is None or predictions is None:
             return
 
-        st.write(f"Length of future_dates: {len(future_dates)}")
-        st.write(f"Length of predictions: {len(predictions)}")
-
-        predictions_df = pd.DataFrame({
-            'Date': future_dates,
-            'Predicted Close Price': predictions
-        })
-
-        st.subheader('Predicted Bitcoin Prices for the Next 7 Days')
-        st.write(predictions_df)
-
         # Calculate highest, lowest, and average predicted prices
         highest_price = max(predictions)
         lowest_price = min(predictions)
@@ -147,6 +136,18 @@ def predict():
         }
         strategy_df = pd.DataFrame(strategy_data)
         st.table(strategy_df)
+        
+        # st.write(f"Length of future_dates: {len(future_dates)}")
+        # st.write(f"Length of predictions: {len(predictions)}")
+
+        predictions_df = pd.DataFrame({
+            'Date': future_dates,
+            'Predicted Close Price': predictions
+        })
+
+        st.subheader('Predicted Bitcoin Prices for the Next 7 Days')
+        st.write(predictions_df)
+
 
     except Exception as e:
         st.error(f"Error: {e}")
