@@ -131,9 +131,6 @@ def predict():
         if future_dates is None or close_predictions is None:
             return
 
-        # st.write(f"Length of future_dates: {len(future_dates)}")
-        # st.write(f"Length of predictions: {len(close_predictions)}")
-
         # Calculate highest, lowest, and average predicted prices
         highest_price = max(high_predictions)
         lowest_price = min(low_predictions)
@@ -147,13 +144,13 @@ def predict():
         strategy, sell_date, buy_date = generate_strategy(data, future_dates, close_predictions, high_predictions, low_predictions)
 
         st.subheader('Swing Trading Strategy')
-        strategy_data = {
-            "Action": ["Sell all", "All in"],
-            "Date": [sell_date.date() if sell_date else "NA", buy_date.date() if buy_date else "NA"]
-        }
-        strategy_df = pd.DataFrame(strategy_data)
-        st.table(strategy_df)
-        
+        if strategy == "Sell only":
+            st.markdown(f"Sell all on **{sell_date.date() if sell_date else 'NA'}** and hold on to cash")
+        elif strategy == "Sell and Buy":
+            st.markdown(f"**Sell all on **{sell_date.date() if sell_date else 'NA'}** and buy back on **{buy_date.date() if buy_date else 'NA'}**")
+        else:
+            st.markdown(f"**Hold the portfolio and do not trade.**")
+
         predictions_df = pd.DataFrame({
             'Date': future_dates,
             'Predicted Close Price': close_predictions,
