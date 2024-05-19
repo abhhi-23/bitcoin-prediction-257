@@ -117,16 +117,16 @@ def predict():
         if future_dates is None or predictions is None:
             return
 
-        # st.write(f"Length of future_dates: {len(future_dates)}")
-        # st.write(f"Length of predictions: {len(predictions)}")
+        st.write(f"Length of future_dates: {len(future_dates)}")
+        st.write(f"Length of predictions: {len(predictions)}")
 
-        # predictions_df = pd.DataFrame({
-        #     'Date': future_dates,
-        #     'Predicted Close Price': predictions
-        # })
+        predictions_df = pd.DataFrame({
+            'Date': future_dates,
+            'Predicted Close Price': predictions
+        })
 
-        # st.subheader('Predicted Bitcoin Prices for the Next 7 Days')
-        # st.write(predictions_df)
+        st.subheader('Predicted Bitcoin Prices for the Next 7 Days')
+        st.write(predictions_df)
 
         # Calculate highest, lowest, and average predicted prices
         highest_price = max(predictions)
@@ -141,12 +141,13 @@ def predict():
         strategy, sell_date, buy_date = generate_strategy(data, future_dates, predictions)
 
         st.subheader('Swing Trading Strategy')
-        if strategy == "Hold":
-            st.markdown("<p style='font-size:24px'>Hold the portfolio and do not trade.</p>", unsafe_allow_html=True)
-        elif strategy == "Sell only":
-            st.markdown(f"Sell all on <span style='font-size:24px'>{sell_date.date()}</span> and hold cash.", unsafe_allow_html=True)
-        elif strategy == "Sell and Buy":
-            st.markdown(f"Sell all on <span style='font-size:24px'>{sell_date.date()}</span> and buy back on <span style='font-size:24px'>{buy_date.date()}</span>.", unsafe_allow_html=True)
+        strategy_data = {
+            "Action": ["Sell all", "All in"],
+            "Date": [sell_date.date() if sell_date else "NA", buy_date.date() if buy_date else "NA"]
+        }
+        strategy_df = pd.DataFrame(strategy_data)
+        st.table(strategy_df)
+
     except Exception as e:
         st.error(f"Error: {e}")
 if st.button('Predict'):
