@@ -95,10 +95,6 @@ BitSmart uses publicly available data:
 - **Codebase:** Complete source code and resources necessary to run BitSmart.
 - **Documentation:** Detailed project report and presentations outlining the design, implementation, and performance of the system.
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE.md file for details.
-
 ## Acknowledgments
 
 - Professors and TA's of CMPE 257 for guidance and support.
