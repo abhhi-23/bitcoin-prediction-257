@@ -22,8 +22,7 @@ date = st.date_input("Select a Date", datetime.date(2018, 1, 1))
 data = load_data('BTC-USD.csv')
 model = load_model('Bitcoin_LSTM_Model.keras')
 
-def predict():   
-
+def predict():
     def calculate_rsi(data, window=14):
         delta = data['Close'].diff()
         gain = (delta.where(delta > 0, 0)).fillna(0)
@@ -42,7 +41,7 @@ def predict():
         return data
 
     def predict_prices(model, data, date):
-        data = data.dropna(subset=['Close'])  
+        data = data.dropna(subset=['Close'])
         data['Date_ordinal'] = data['Date'].map(datetime.datetime.toordinal)
         if pd.to_datetime(date) not in data['Date'].values:
             st.warning("Selected date is not in the dataset.")
@@ -55,21 +54,20 @@ def predict():
         sequence_data = data.iloc[date_index-sequence_length:date_index]
         future_dates = pd.date_range(date + datetime.timedelta(days=1), periods=7).tolist()
 
-        # Assuming the model expects 3 features (Open, High, Low)
-        features = ['Close', 'High', 'Low']  
+        features = ['Close', 'High', 'Low']
         sequence_data_normalized = (sequence_data[features] - sequence_data[features].mean()) / sequence_data[features].std()
         sequence_input = sequence_data_normalized.values.reshape(1, sequence_length, len(features))
-        
+
         close_predictions = []
         high_predictions = []
         low_predictions = []
 
         for i in range(7):
             pred = model.predict(sequence_input)
-            predicted_close = pred[0, 2] * sequence_data[features].std()['Close'] + sequence_data[features].mean()['Close']  
-            predicted_high = pred[0, 0] * sequence_data[features].std()['High'] + sequence_data[features].mean()['High']  
-            predicted_low = pred[0, 1] * sequence_data[features].std()['Low'] + sequence_data[features].mean()['Low']  
-            
+            predicted_close = pred[0, 2] * sequence_data[features].std()['Close'] + sequence_data[features].mean()['Close']
+            predicted_high = pred[0, 0] * sequence_data[features].std()['High'] + sequence_data[features].mean()['High']
+            predicted_low = pred[0, 1] * sequence_data[features].std()['Low'] + sequence_data[features].mean()['Low']
+
             close_predictions.append(predicted_close)
             high_predictions.append(predicted_high)
             low_predictions.append(predicted_low)
@@ -83,42 +81,41 @@ def predict():
     def generate_strategy(data, future_dates, close_predictions, high_predictions, low_predictions, rsi_window=14, ma_window=20, threshold=0.05):
         max_price = max(close_predictions)
         min_price = min(close_predictions)
-        
+
         pred_df = pd.DataFrame({'Date': future_dates, 'Predicted_Close': close_predictions})
         data = pd.concat([data.set_index('Date'), pred_df.set_index('Date')], axis=1)
 
         data = calculate_indicators(data, ma_window)
         data['RSI'] = calculate_rsi(data, rsi_window)
-        
+
         sell_date = None
         buy_date = None
 
         for i, price in enumerate(close_predictions):
             if price == max_price:
                 sell_date = i
-                break  # Break to ensure we only set sell_date once
+                break
 
         for i, price in enumerate(close_predictions):
             if price == min_price and sell_date is not None and i > sell_date:
                 buy_date = i
-                break  # Break to ensure we only set buy_date once
+                break
 
-        # Strategy decisions
         if sell_date is not None and data.loc[future_dates[sell_date], 'RSI'] > 70:
-            return "Sell only", future_dates[sell_date], None  # RSI indicates overbought, sell
+            return "Sell only", future_dates[sell_date], None
 
         if buy_date is not None and data.loc[future_dates[buy_date], 'RSI'] < 30:
-            return "Sell and Buy", future_dates[sell_date], future_dates[buy_date]  # RSI indicates oversold, buy
+            return "Sell and Buy", future_dates[sell_date], future_dates[buy_date]
 
         if sell_date is not None and close_predictions[sell_date] > data.loc[future_dates[sell_date], 'BB_upper']:
-            return "Sell only", future_dates[sell_date], None  # Price is above upper Bollinger Band, sell
+            return "Sell only", future_dates[sell_date], None
 
         if buy_date is not None and close_predictions[buy_date] < data.loc[future_dates[buy_date], 'BB_lower']:
-            return "Sell and Buy", future_dates[sell_date], future_dates[buy_date]  # Price is below lower Bollinger Band, buy
+            return "Sell and Buy", future_dates[sell_date], future_dates[buy_date]
 
         price_change = (max_price - min_price) / min_price
         if price_change < threshold:
-            return "Hold", None, None 
+            return "Hold", None, None
 
         return "Hold", None, None
 
@@ -131,7 +128,6 @@ def predict():
         if future_dates is None or close_predictions is None:
             return
 
-        # Calculate highest, lowest, and average predicted prices
         highest_price = max(high_predictions)
         lowest_price = min(low_predictions)
         average_price = np.mean(close_predictions)
@@ -145,9 +141,9 @@ def predict():
 
         st.subheader('Swing Trading Strategy')
         if strategy == "Sell only":
-            st.markdown(f"Sell all on **{sell_date.date() if sell_date else 'NA'}** and hold on to cash")
+            st.markdown(f"**Sell all on {sell_date.date() if sell_date else 'NA'} and hold on to cash**")
         elif strategy == "Sell and Buy":
-            st.markdown(f"**Sell all on **{sell_date.date() if sell_date else 'NA'}** and buy back on **{buy_date.date() if buy_date else 'NA'}**")
+            st.markdown(f"**Sell all on {sell_date.date() if sell_date else 'NA'} and buy back on {buy_date.date() if buy_date else 'NA'}**")
         else:
             st.markdown(f"**Hold the portfolio and do not trade.**")
 
