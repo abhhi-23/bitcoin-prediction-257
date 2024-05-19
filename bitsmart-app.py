@@ -4,16 +4,17 @@ from tensorflow.keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 import pandas as pd
 import numpy as np
+from datetime import timedelta
 
 # Initialize the Streamlit UI components
 st.title('BitSmart Bitcoin Prediction')
 
 # Instructions and date input
 st.write("Enter date for bitcoin prediction.... ")
-selected_date = st.date_input("", min_value=datetime.today())
+selected_date = st.date_input("")
 
 if st.button('Predict'):
-
+    start_date = selected_date.strftime('%Y-%m-%d')
     # Load the trained model
     model = load_model('Bitcoin_LSTM_Model.keras')
 
@@ -61,7 +62,6 @@ if st.button('Predict'):
     lowest_price_next_7_days = min(predicted_low_prices)
     average_close_price_next_7_days = np.mean(predicted_close_prices)
 
-
     
     # Placeholder data to simulate predictions
     predictions = {
@@ -69,9 +69,55 @@ if st.button('Predict'):
         "Lowest Price": lowest_price_next_7_days,
         "Average Closing Price": average_close_price_next_7_days
     }
-    recommended_strategy = {"Sell All": "04-23-2024", "All In": "NA"}
+    
+
+    def determine_trading_strategy(start_date, predicted_highs, predicted_lows, predicted_closes, initial_cash):
+        start_date = pd.to_datetime(start_date)
+        initial_bitcoins = initial_cash / predicted_closes[0]
+        best_sell_day = None
+        best_buy_day = None
+        max_profit = -np.inf
+
+        for sell_day in range(7):
+            sell_price = predicted_highs[sell_day]
+            cash_after_sell = initial_bitcoins * sell_price
+
+            if sell_day < 6:  # Ensure there is at least one day after selling to consider buying
+                best_buy_price = np.min(predicted_lows[sell_day+1:])
+                buy_day = np.argmin(predicted_lows[sell_day+1:]) + sell_day + 1
+                bitcoins_after_buy = cash_after_sell / best_buy_price
+                final_balance = bitcoins_after_buy * predicted_closes[-1]  # Evaluate at the last day's closing price
+
+                if final_balance > max_profit:
+                    max_profit = final_balance
+                    best_sell_day = sell_day
+                    best_buy_day = buy_day
+            else:
+                # If selling on the last day, no buy operation
+                final_balance = cash_after_sell
+                if final_balance > max_profit:
+                    max_profit = final_balance
+                    best_sell_day = sell_day
+                    best_buy_day = None
+
+        sell_date = (start_date + pd.Timedelta(days=int(best_sell_day))) if best_sell_day is not None else "NA"
+        buy_date = (start_date + pd.Timedelta(days=int(buy_day))) if best_buy_day is not None else "NA"
+
+        return {
+            "Sell Date": sell_date.strftime("%Y-%m-%d") if best_sell_day is not None else "NA",
+            "Buy Date": buy_date.strftime("%Y-%m-%d") if best_buy_day is not None else "NA",
+            "Final Balance": f"${max_profit:.2f}"
+        }
+
+    initial_cash = 100000
+    predicted_highs = predicted_prices[:, 0]
+    predicted_lows = predicted_prices[:, 1]
+    predicted_closes = predicted_prices[:, 2]
+    
 
     st.write(f"You have selected today as {selected_date.strftime('%m-%d-%Y')}. BitSmart has made the following predictions.")
+    strategy = determine_trading_strategy(start_date,predicted_highs, predicted_lows, predicted_closes, initial_cash)
+    recommended_strategy = strategy
 
     # Display predicted prices
     st.write("### Predicted prices (in USD) for the next seven days are:")
