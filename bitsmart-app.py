@@ -17,7 +17,7 @@ def load_model(model_path):
 
 st.title('BitSmart - Bitcoin Price Prediction and Trading Strategy')
 
-date = st.date_input("Select a Date", datetime.date(2024, 4, 20))
+date = st.date_input("Select a Date", datetime.date(2018, 1, 1))
 
 data = load_data('BTC-USD.csv')
 model = load_model('Bitcoin_LSTM_Model.keras')
@@ -113,10 +113,18 @@ def predict():
         return "Hold", None, None
 
     try:
+        if not (datetime.date(2018, 1, 1) <= date <= datetime.date(2024, 5, 19)):
+            st.warning("Selected date must be between 2018-01-01 and 2024-05-19.")
+            return
+
         future_dates, predictions = predict_prices(model, data, date)
         if future_dates is None or predictions is None:
             return
 
+        # st.write(f"Length of future_dates: {len(future_dates)}")
+        # st.write(f"Length of predictions: {len(predictions)}")
+
+        
         # Calculate highest, lowest, and average predicted prices
         highest_price = max(predictions)
         lowest_price = min(predictions)
@@ -136,10 +144,6 @@ def predict():
         }
         strategy_df = pd.DataFrame(strategy_data)
         st.table(strategy_df)
-        
-        # st.write(f"Length of future_dates: {len(future_dates)}")
-        # st.write(f"Length of predictions: {len(predictions)}")
-
         predictions_df = pd.DataFrame({
             'Date': future_dates,
             'Predicted Close Price': predictions
