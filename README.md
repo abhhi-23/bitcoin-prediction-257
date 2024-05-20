@@ -6,13 +6,14 @@
 2. Abhi Kadam (017432194) - abhi.kadam@sjsu.edu
 3. Mohana Moganti (017163497) - mohanasatyanarayana.moganti@sjsu.edu
 
+## Project URL
+
+https://bitsmart-apppy-kbdrotmpxyvxvdkpsupj9g.streamlit.app/
+
+
 ## Project Overview
 
 BitSmart is a cutting-edge machine learning service designed specifically for Bitcoin price prediction and swing trading strategy formulation. Developed as part of the CMPE 257 Machine Learning course, this tool utilizes historical Bitcoin market data to forecast future price movements and provide actionable trading insights. This project simplifies the complex nature of cryptocurrency trading into a user-friendly web application, making advanced trading strategies accessible to everyone.
-
-## Project URL
-
-https://bitcoin-prediction-257-h9k2oxhgt55baro4ykvenw.streamlit.app/
 
 ## Getting Started
 
